@@ -1,4 +1,5 @@
 import {AfterViewInit, Component} from '@angular/core';
+
 import * as CodeMirror from 'codemirror/lib/codemirror';
 import 'codemirror/mode/xml/xml';
 import 'codemirror/addon/hint/show-hint';
@@ -6,6 +7,9 @@ import 'codemirror/addon/hint/xml-hint';
 import 'codemirror/addon/fold/foldcode';
 import 'codemirror/addon/fold/xml-fold';
 import 'codemirror/addon/fold/foldgutter';
+
+import { OSMD } from 'opensheetmusicdisplay';
+
 import {TAGS} from '../schema/music-xml';
 
 @Component({
@@ -18,6 +22,8 @@ export class AppComponent implements AfterViewInit {
   config: any;
 
   code: any;
+
+  private _osmd: OSMD;
 
   constructor() {
     this.config = {
@@ -45,14 +51,26 @@ export class AppComponent implements AfterViewInit {
     const instance = CodeMirror.fromTextArea(document.getElementById('mirror'), this.config);
     console.log('instance: ', instance);
     instance.on('change', () => {
-      console.log('value: ', instance.getValue());
       this.code = instance.getValue();
+      if (!!this.code && !!this._osmd) {
+        this._osmd
+          .load(this.code)
+          .then(
+            () => this._osmd.render(),
+            (err) => console.error(err)
+          )
+          .then(
+            () => console.log('Sheet music displayed.'),
+            (err) => console.error(err)
+          );
+      }
     });
+
+    this._osmd = new OSMD('container');
   }
 }
 
 function completeAfter(cm, pred) {
-  // var cur = cm.getCursor();
   if (!pred || pred()) {
     setTimeout(function () {
       if (!cm.state.completionActive) {
